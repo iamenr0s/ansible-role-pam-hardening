@@ -1,0 +1,50 @@
+---
+# audit: read-only. remediate: guards, backup, enable faillock in the PAM stack, write faillock.conf.
+- name: Run pam_hardening
+  when: linux_hardening_pam_enabled | bool
+  block:
+    - name: Validate linux_hardening_mode
+      ansible.builtin.assert:
+        that: linux_hardening_mode in ['audit', 'remediate']
+        fail_msg: "linux_hardening_mode must be 'audit' or 'remediate', got '{{ linux_hardening_mode }}'"
+        quiet: true
+
+    - name: Stop on unsupported OS families
+      ansible.builtin.assert:
+        that: ansible_facts['os_family'] in ['RedHat', 'Debian']
+        fail_msg: "pam_hardening supports the RedHat and Debian families, not {{ ansible_facts['os_family'] }}"
+        quiet: true
+
+    - name: Audit (read-only)
+      ansible.builtin.include_tasks: audit.yml
+      when: linux_hardening_mode == 'audit'
+
+    - name: Remediate
+      when: linux_hardening_mode == 'remediate'
+      block:
+        - name: Require explicit remediation confirmation
+          ansible.builtin.assert:
+            that: linux_hardening_confirm_remediation | bool
+            fail_msg: >-
+              Remediation changes the PAM stack, which can lock users out. Set linux_hardening_confirm_remediation: true
+              to proceed (run with linux_hardening_mode: audit to preview).
+            quiet: true
+
+        - name: Refuse settings that lock accounts out for good or never
+          ansible.builtin.assert:
+            that:
+              - linux_hardening_pam_faillock_deny | int >= 1
+              - (linux_hardening_pam_faillock_unlock_time | int > 0) or (linux_hardening_pam_allow_permanent_lock | bool)
+            fail_msg: >-
+              deny must be at least 1, and unlock_time 0 (locked until an admin runs faillock --reset) needs
+              linux_hardening_pam_allow_permanent_lock: true.
+            quiet: true
+
+        - name: Configure
+          ansible.builtin.include_tasks: configure.yml
+
+        - name: Verify effective configuration
+          ansible.builtin.include_tasks: audit.yml
+          vars:
+            __lh_pam_audit_fatal: true
+          when: linux_hardening_verify | bool

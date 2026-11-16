@@ -1,0 +1,28 @@
+---
+- name: Ensure libpam-modules (pam_faillock) is installed
+  ansible.builtin.package:
+    name: libpam-modules
+    state: present
+
+- name: Back up the PAM files
+  ansible.builtin.command: >-
+    cp -a /etc/pam.d /var/backups/{{ __linux_hardening_pam_backup_name }}-pam.d-{{ ansible_facts['date_time']['epoch'] }}
+  changed_when: true
+
+- name: Install the pam-auth-update profiles
+  ansible.builtin.copy:
+    src: "{{ item.src }}"
+    dest: "/usr/share/pam-configs/{{ item.dest }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop:
+    - {src: pam-faillock, dest: linux-hardening-faillock}
+    - {src: pam-faillock-authfail, dest: linux-hardening-faillock-authfail}
+    - {src: pam-faillock-authsucc, dest: linux-hardening-faillock-authsucc}
+
+- name: Regenerate the PAM common files
+  ansible.builtin.command: pam-auth-update --package
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+  changed_when: true

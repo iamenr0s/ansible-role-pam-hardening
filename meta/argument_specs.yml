@@ -1,0 +1,20 @@
+---
+argument_specs:
+  main:
+    short_description: Audit and enable PAM account lockout (faillock).
+    options:
+      linux_hardening_mode: {type: str, default: audit, choices: [audit, remediate], description: "audit is read-only."}
+      linux_hardening_confirm_remediation: {type: bool, default: false, description: "Must be true before remediate changes anything."}
+      linux_hardening_backup: {type: bool, default: true, description: "Back up faillock.conf when it changes."}
+      linux_hardening_verify: {type: bool, default: true, description: "Re-audit after remediation."}
+      linux_hardening_fail_on_error: {type: bool, default: true, description: "Fail the play when audit finds deviations."}
+      linux_hardening_pam_enabled: {type: bool, default: true, description: "Run the role."}
+      linux_hardening_pam_faillock_conf: {type: path, default: /etc/security/faillock.conf, description: "faillock configuration file."}
+      linux_hardening_pam_faillock_deny: {type: int, default: 5, description: "Failed logins before the account locks."}
+      linux_hardening_pam_faillock_fail_interval: {type: int, default: 900, description: "Seconds in which the failures are counted."}
+      linux_hardening_pam_faillock_unlock_time: {type: int, default: 900, description: "Seconds a lock lasts; 0 is permanent."}
+      linux_hardening_pam_faillock_even_deny_root: {type: bool, default: false, description: "Also lock root."}
+      linux_hardening_pam_faillock_root_unlock_time: {type: int, default: 900, description: "Seconds root stays locked (when even_deny_root)."}
+      linux_hardening_pam_allow_permanent_lock: {type: bool, default: false, description: "Allow unlock_time 0."}
+      linux_hardening_pam_faillock_extra: {type: dict, default: {}, description: "Extra faillock.conf settings; true writes a bare flag."}
+      linux_hardening_pam_authselect_profile: {type: str, description: "EL/Fedora: profile to select when none is selected (minimal, sssd, winbind)."}

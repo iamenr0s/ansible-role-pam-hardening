@@ -1,0 +1,27 @@
+---
+# --- Shared collection variables ---
+linux_hardening_mode: audit                    # audit (read-only) | remediate
+linux_hardening_confirm_remediation: false     # must be true for any change
+linux_hardening_backup: true
+linux_hardening_verify: true
+linux_hardening_fail_on_error: true
+
+# --- pam_hardening (sole owner of /etc/pam.d changes and faillock in this collection) ---
+linux_hardening_pam_enabled: true
+linux_hardening_pam_faillock_conf: /etc/security/faillock.conf
+
+# Lock an account after `deny` failed logins within `fail_interval` seconds, for `unlock_time` seconds.
+linux_hardening_pam_faillock_deny: 5
+linux_hardening_pam_faillock_fail_interval: 900
+linux_hardening_pam_faillock_unlock_time: 900
+# Also lock root. Off by default: an attacker could then keep root locked out of its own console.
+linux_hardening_pam_faillock_even_deny_root: false
+linux_hardening_pam_faillock_root_unlock_time: 900
+# unlock_time 0 locks until an admin runs `faillock --reset`; refused unless this is true.
+linux_hardening_pam_allow_permanent_lock: false
+# Extra faillock.conf settings {key: value}; true writes a bare flag (e.g. {silent: true, audit: true}).
+linux_hardening_pam_faillock_extra: {}
+
+# EL/Fedora only. When no authselect profile is selected the role refuses to pick one for you:
+# name it here (minimal, sssd, winbind) to let the role select it. The old PAM files are backed up.
+linux_hardening_pam_authselect_profile: null

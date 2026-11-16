@@ -1,0 +1,6 @@
+Name: Account lockout after failed logins (faillock, authfail) - linux_hardening
+Default: yes
+Priority: 128
+Auth-Type: Primary
+Auth:
+	[default=die]			pam_faillock.so authfail

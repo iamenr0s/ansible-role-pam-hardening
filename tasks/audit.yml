@@ -1,0 +1,52 @@
+---
+- name: Gather PAM state
+  ansible.builtin.include_tasks: facts.yml
+
+- name: Look at faillock.conf
+  ansible.builtin.stat:
+    path: "{{ linux_hardening_pam_faillock_conf }}"
+  register: __lh_pam_conf
+
+- name: Read faillock.conf
+  ansible.builtin.slurp:
+    src: "{{ linux_hardening_pam_faillock_conf }}"
+  register: __lh_pam_conf_content
+  when: __lh_pam_conf.stat.exists
+
+# On EL a missing profile can only be fixed when the user named one to select.
+- name: Compare with desired state
+  ansible.builtin.set_fact:
+    __lh_pam_findings: >-
+      {%- set out = [] -%}
+      {%- if not __lh_pam_stack_ok -%}
+      {%- set can = ansible_facts['os_family'] == 'Debian' or (__lh_pam_profile | default('') != '') or linux_hardening_pam_authselect_profile is not none -%}
+      {%- set _ = out.append({'key': 'PAM stack calls pam_faillock', 'expected': 'enabled',
+                              'actual': 'not enabled' ~ ('' if can else ' (no authselect profile selected; set linux_hardening_pam_authselect_profile)'),
+                              'fixable': can}) -%}
+      {%- endif -%}
+      {%- if not __lh_pam_conf.stat.exists
+             or (__lh_pam_conf_content.content | b64decode) != lookup('ansible.builtin.template', 'faillock.conf.j2')
+             or __lh_pam_conf.stat.mode != '0644' -%}
+      {%- set _ = out.append({'key': 'file ' ~ linux_hardening_pam_faillock_conf, 'expected': 'present with the desired settings', 'actual': 'missing or different', 'fixable': true}) -%}
+      {%- endif -%}
+      {{ out | to_json }}
+
+- name: Record findings
+  ansible.builtin.set_fact:
+    linux_hardening_pam_findings: "{{ __lh_pam_findings | from_json }}"
+
+- name: Report pam_hardening result
+  ansible.builtin.debug:
+    msg: "{{ 'COMPLIANT' if linux_hardening_pam_findings | length == 0 else linux_hardening_pam_findings }}"
+
+# After remediation only fixable findings fail the run.
+- name: Fail on findings
+  ansible.builtin.fail:
+    msg: "pam_hardening found {{ __lh_pam_blocking | length }} deviation(s)."
+  vars:
+    __lh_pam_blocking: >-
+      {{ linux_hardening_pam_findings
+         if (linux_hardening_fail_on_error | bool) and not (__lh_pam_audit_fatal | default(false))
+         else linux_hardening_pam_findings | selectattr('fixable') | list
+         if (__lh_pam_audit_fatal | default(false)) else [] }}
+  when: __lh_pam_blocking | length > 0

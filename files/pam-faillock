@@ -1,0 +1,9 @@
+Name: Account lockout after failed logins (faillock, preauth) - linux_hardening
+Default: yes
+Priority: 1024
+Auth-Type: Primary
+Auth:
+	required			pam_faillock.so preauth
+Account-Type: Primary
+Account:
+	required			pam_faillock.so

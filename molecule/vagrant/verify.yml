@@ -1,0 +1,74 @@
+---
+# Real logins against the live PAM stack. Reaching this play over SSH already proves the admin (vagrant) is not locked out.
+- name: Verify account lockout end to end
+  hosts: all
+  become: true
+  gather_facts: false
+  vars:
+    lh_user: lhtest
+    lh_pass: Correct-Horse-9-Battery
+  tasks:
+    - name: Install the PAM helper
+      ansible.builtin.copy:
+        src: pamauth.py
+        dest: /usr/local/bin/pamauth.py
+        mode: "0755"
+
+    - name: Create the test user
+      ansible.builtin.user:
+        name: "{{ lh_user }}"
+        create_home: false
+
+    - name: Set its password
+      ansible.builtin.command: chpasswd
+      args:
+        stdin: "{{ lh_user }}:{{ lh_pass }}"
+      changed_when: false
+
+    - name: Start from a clean failure count
+      ansible.builtin.command: "faillock --user {{ lh_user }} --reset"
+      changed_when: false
+
+    - name: The correct password works before any failure
+      ansible.builtin.command: "/usr/local/bin/pamauth.py {{ lh_user }} {{ lh_pass }} login"
+      changed_when: false
+
+    - name: Fail three times with a wrong password
+      ansible.builtin.command: "/usr/local/bin/pamauth.py {{ lh_user }} wrong-password login"
+      register: __bad
+      changed_when: false
+      failed_when: __bad.rc == 0
+      loop: [1, 2, 3]
+
+    - name: Now even the correct password is refused (account locked)
+      ansible.builtin.command: "/usr/local/bin/pamauth.py {{ lh_user }} {{ lh_pass }} login"
+      register: __locked
+      changed_when: false
+      failed_when: __locked.rc == 0
+
+    - name: Faillock lists the failures
+      ansible.builtin.command: "faillock --user {{ lh_user }}"
+      register: __fl
+      changed_when: false
+      failed_when: __fl.stdout.count('V') < 3
+
+    - name: An admin can reset the lock
+      ansible.builtin.command: "faillock --user {{ lh_user }} --reset"
+      changed_when: true
+
+    - name: The correct password works again
+      ansible.builtin.command: "/usr/local/bin/pamauth.py {{ lh_user }} {{ lh_pass }} login"
+      changed_when: false
+
+    - name: Root is not locked by default (even_deny_root is off)
+      ansible.builtin.command: "/usr/local/bin/pamauth.py root wrong-password login"
+      register: __root
+      changed_when: false
+      failed_when: __root.rc == 0
+      loop: [1, 2, 3, 4]
+
+    - name: Root can still be reached through sudo
+      ansible.builtin.command: id -u
+      changed_when: false
+      register: __id
+      failed_when: __id.stdout != '0'

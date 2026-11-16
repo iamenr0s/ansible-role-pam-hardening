@@ -1,0 +1,14 @@
+---
+- name: Converge (remediate on a real VM)
+  hosts: all
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Remediate
+      ansible.builtin.include_role:
+        name: "{{ playbook_dir }}/../.."  # noqa: role-name[path]
+      vars:
+        linux_hardening_mode: remediate
+        linux_hardening_confirm_remediation: true
+        linux_hardening_pam_authselect_profile: minimal
+        linux_hardening_pam_faillock_deny: 3

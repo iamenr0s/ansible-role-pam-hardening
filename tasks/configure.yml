@@ -1,0 +1,24 @@
+---
+- name: Gather PAM state
+  ansible.builtin.include_tasks: facts.yml
+
+- name: Write faillock.conf
+  ansible.builtin.template:
+    src: faillock.conf.j2
+    dest: "{{ linux_hardening_pam_faillock_conf }}"
+    owner: root
+    group: root
+    mode: "0644"
+    backup: "{{ linux_hardening_backup | bool }}"
+
+- name: Enable faillock in the PAM stack (EL / Fedora)
+  ansible.builtin.include_tasks: stack_authselect.yml
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - not __lh_pam_stack_ok
+
+- name: Enable faillock in the PAM stack (Debian / Ubuntu)
+  ansible.builtin.include_tasks: stack_pam_auth_update.yml
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - not __lh_pam_stack_ok

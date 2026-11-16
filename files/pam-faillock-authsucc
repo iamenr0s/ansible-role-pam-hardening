@@ -1,0 +1,6 @@
+Name: Account lockout after failed logins (faillock, authsucc) - linux_hardening
+Default: yes
+Priority: 1024
+Auth-Type: Additional
+Auth:
+	required			pam_faillock.so authsucc

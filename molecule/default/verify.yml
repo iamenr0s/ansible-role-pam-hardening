@@ -1,0 +1,31 @@
+---
+- name: Verify
+  hosts: all
+  become: false
+  gather_facts: true
+  tasks:
+    - name: Audit again
+      ansible.builtin.include_role:
+        name: "{{ playbook_dir }}/../.."  # noqa: role-name[path]
+      vars:
+        linux_hardening_mode: audit
+        linux_hardening_pam_faillock_deny: 4
+        linux_hardening_pam_faillock_extra: {silent: true}
+
+    - name: Read faillock.conf
+      ansible.builtin.slurp:
+        src: /etc/security/faillock.conf
+      register: __f
+
+    - name: Assert settings
+      ansible.builtin.assert:
+        that:
+          - "'deny = 4' in (__f.content | b64decode)"
+          - "'unlock_time = 900' in (__f.content | b64decode)"
+          - "'silent' in (__f.content | b64decode).splitlines()"
+          - "'even_deny_root' not in (__f.content | b64decode)"
+        quiet: true
+
+    - name: Find the PAM file that must call faillock
+      ansible.builtin.command: "grep -l pam_faillock.so /etc/pam.d/{{ 'system-auth' if ansible_facts['os_family'] == 'RedHat' else 'common-auth' }}"
+      changed_when: false

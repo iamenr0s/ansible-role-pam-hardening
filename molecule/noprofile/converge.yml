@@ -1,0 +1,31 @@
+---
+# EL only: with no authselect profile selected the role must refuse to replace hand-managed PAM files.
+- name: Converge (no profile named)
+  hosts: all
+  become: false
+  gather_facts: true
+  tasks:
+    - name: Try to remediate without a profile
+      when: ansible_facts['os_family'] == 'RedHat'
+      block:
+        - name: Remediate
+          ansible.builtin.include_role:
+            name: "{{ playbook_dir }}/../.."  # noqa: role-name[path]
+          vars:
+            linux_hardening_mode: remediate
+            linux_hardening_confirm_remediation: true
+        - name: Fail if the role did not refuse
+          ansible.builtin.fail:
+            msg: Role replaced hand-managed PAM files.
+      rescue:
+        - name: Assert the refusal named the variable to set
+          ansible.builtin.assert:
+            that: "'linux_hardening_pam_authselect_profile' in ansible_failed_result.msg"
+            quiet: true
+
+    - name: PAM files were not touched
+      ansible.builtin.command: "grep -q pam_faillock.so /etc/pam.d/system-auth"
+      register: __g
+      changed_when: false
+      failed_when: __g.rc == 0
+      when: ansible_facts['os_family'] == 'RedHat'

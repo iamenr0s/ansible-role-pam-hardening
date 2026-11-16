@@ -1,0 +1,12 @@
+{{ ansible_managed | comment }}
+# iamenr0s.linux_hardening.pam_hardening. Local changes are overwritten.
+deny = {{ linux_hardening_pam_faillock_deny }}
+fail_interval = {{ linux_hardening_pam_faillock_fail_interval }}
+unlock_time = {{ linux_hardening_pam_faillock_unlock_time }}
+{% if linux_hardening_pam_faillock_even_deny_root | bool %}
+even_deny_root
+root_unlock_time = {{ linux_hardening_pam_faillock_root_unlock_time }}
+{% endif %}
+{% for k, v in linux_hardening_pam_faillock_extra | dictsort %}
+{{ k if v is sameas true else k ~ ' = ' ~ v }}
+{% endfor %}
