@@ -1,0 +1,12 @@
+---
+- name: Verify (no profile named)
+  hosts: all
+  become: false
+  gather_facts: true
+  tasks:
+    - name: PAM files were not touched
+      ansible.builtin.command: "grep -q pam_faillock.so /etc/pam.d/system-auth"
+      register: __g
+      changed_when: false
+      failed_when: __g.rc == 0
+      when: ansible_facts['os_family'] == 'RedHat'

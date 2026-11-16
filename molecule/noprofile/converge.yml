@@ -22,10 +22,3 @@
           ansible.builtin.assert:
             that: "'linux_hardening_pam_authselect_profile' in ansible_failed_result.msg"
             quiet: true
-
-    - name: PAM files were not touched
-      ansible.builtin.command: "grep -q pam_faillock.so /etc/pam.d/system-auth"
-      register: __g
-      changed_when: false
-      failed_when: __g.rc == 0
-      when: ansible_facts['os_family'] == 'RedHat'

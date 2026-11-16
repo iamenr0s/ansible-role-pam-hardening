@@ -6,7 +6,8 @@
 
 - name: stack_pam_auth_update | Back up the PAM files
   ansible.builtin.command: >-
-    cp -a /etc/pam.d /var/backups/{{ __linux_hardening_pam_backup_name }}-pam.d-{{ ansible_facts['date_time']['epoch'] }}
+    cp -a /etc/pam.d
+    /var/backups/{{ __linux_hardening_pam_backup_name }}-pam.d-{{ ansible_facts['date_time']['epoch'] }}
   changed_when: true
 
 - name: stack_pam_auth_update | Install the pam-auth-update profiles

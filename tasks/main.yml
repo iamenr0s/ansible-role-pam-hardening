@@ -39,7 +39,9 @@
           ansible.builtin.assert:
             that:
               - linux_hardening_pam_faillock_deny | int >= 1
-              - (linux_hardening_pam_faillock_unlock_time | int > 0) or (linux_hardening_pam_allow_permanent_lock | bool)
+              - >-
+                (linux_hardening_pam_faillock_unlock_time | int > 0)
+                or (linux_hardening_pam_allow_permanent_lock | bool)
             fail_msg: >-
               deny must be at least 1, and unlock_time 0 (locked until an admin runs faillock --reset) needs
               linux_hardening_pam_allow_permanent_lock: true.

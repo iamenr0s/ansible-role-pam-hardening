@@ -1,5 +1,6 @@
 ---
-# Real logins against the live PAM stack. Reaching this play over SSH already proves the admin (vagrant) is not locked out.
+# Real logins against the live PAM stack.
+# Reaching this play over SSH already proves the admin (vagrant) is not locked out.
 - name: Verify account lockout end to end
   hosts: all
   become: true

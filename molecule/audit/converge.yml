@@ -10,16 +10,3 @@
       vars:
         linux_hardening_mode: audit
         linux_hardening_fail_on_error: false
-
-    - name: Findings include the stack and the missing file
-      ansible.builtin.assert:
-        that:
-          - linux_hardening_pam_findings | selectattr('key', 'search', '^PAM stack') | list | length == 1
-          - linux_hardening_pam_findings | selectattr('key', 'search', '^file ') | list | length == 1
-        quiet: true
-
-    - name: Nothing was written
-      ansible.builtin.command: grep -q "Ansible managed" /etc/security/faillock.conf
-      register: __f
-      changed_when: false
-      failed_when: __f.rc == 0

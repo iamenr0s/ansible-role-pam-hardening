@@ -29,12 +29,14 @@
          or linux_hardening_pam_authselect_profile is not none }}
 
 - name: audit | Record findings
+  vars:
+    __lh_pam_no_profile_hint: " (no authselect profile selected; set linux_hardening_pam_authselect_profile)"
   ansible.builtin.set_fact:
     linux_hardening_pam_findings: >-
       {{ ([] if __lh_pam_stack_ok else [{
             'key': 'PAM stack calls pam_faillock',
             'expected': 'enabled',
-            'actual': 'not enabled' ~ ('' if __lh_pam_can_fix else ' (no authselect profile selected; set linux_hardening_pam_authselect_profile)'),
+            'actual': 'not enabled' ~ ('' if __lh_pam_can_fix else __lh_pam_no_profile_hint),
             'fixable': __lh_pam_can_fix}])
          + ([] if __lh_pam_conf_ok else [{
             'key': 'file ' ~ linux_hardening_pam_faillock_conf,
