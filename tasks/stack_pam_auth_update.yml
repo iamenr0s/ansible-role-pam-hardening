@@ -1,15 +1,15 @@
 ---
-- name: Ensure libpam-modules (pam_faillock) is installed
+- name: stack_pam_auth_update | Ensure libpam-modules (pam_faillock) is installed
   ansible.builtin.package:
     name: libpam-modules
     state: present
 
-- name: Back up the PAM files
+- name: stack_pam_auth_update | Back up the PAM files
   ansible.builtin.command: >-
     cp -a /etc/pam.d /var/backups/{{ __linux_hardening_pam_backup_name }}-pam.d-{{ ansible_facts['date_time']['epoch'] }}
   changed_when: true
 
-- name: Install the pam-auth-update profiles
+- name: stack_pam_auth_update | Install the pam-auth-update profiles
   ansible.builtin.copy:
     src: "{{ item.src }}"
     dest: "/usr/share/pam-configs/{{ item.dest }}"
@@ -21,7 +21,7 @@
     - {src: pam-faillock-authfail, dest: linux-hardening-faillock-authfail}
     - {src: pam-faillock-authsucc, dest: linux-hardening-faillock-authsucc}
 
-- name: Regenerate the PAM common files
+- name: stack_pam_auth_update | Regenerate the PAM common files
   ansible.builtin.command: pam-auth-update --package
   environment:
     DEBIAN_FRONTEND: noninteractive

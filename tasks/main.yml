@@ -3,6 +3,11 @@
 - name: Run pam_hardening
   when: linux_hardening_pam_enabled | bool
   block:
+    - name: Gather the minimal facts the role needs (os_family, date_time)
+      ansible.builtin.setup:
+        gather_subset: [min, date_time]
+      when: ansible_facts['date_time'] is not defined or ansible_facts['os_family'] is not defined
+
     - name: Validate linux_hardening_mode
       ansible.builtin.assert:
         that: linux_hardening_mode in ['audit', 'remediate']

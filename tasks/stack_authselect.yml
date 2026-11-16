@@ -1,5 +1,5 @@
 ---
-- name: Refuse to pick an authselect profile on its own
+- name: stack_authselect | Refuse to pick an authselect profile on its own
   ansible.builtin.assert:
     that: (__lh_pam_profile != '') or (linux_hardening_pam_authselect_profile is not none)
     fail_msg: >-
@@ -8,20 +8,22 @@
       the old files are backed up and `authselect backup-restore` brings them back.
     quiet: true
 
-- name: Ensure authselect is installed
+- name: stack_authselect | Ensure authselect is installed
   ansible.builtin.package:
     name: authselect
     state: present
 
-- name: Select the profile with faillock enabled (the current PAM files are backed up first)
+- name: stack_authselect | Select the profile with faillock enabled (the current PAM files are backed up first)
   vars:
     __lh_pam_use_profile: "{{ __lh_pam_profile if __lh_pam_profile != '' else linux_hardening_pam_authselect_profile }}"
-  ansible.builtin.command: >-
-    authselect select {{ __lh_pam_use_profile }} {{ (__lh_pam_features + ['with-faillock']) | unique | join(' ') }}
-    --backup={{ __linux_hardening_pam_backup_name }}-{{ ansible_facts['date_time']['epoch'] }}
-    {{ '--force' if __lh_pam_profile == '' else '' }}
+  ansible.builtin.command:
+    argv: >-
+      {{ ['authselect', 'select', __lh_pam_use_profile]
+         + ((__lh_pam_features + ['with-faillock']) | unique | list)
+         + ['--backup=' ~ __linux_hardening_pam_backup_name ~ '-' ~ ansible_facts['date_time']['epoch']]
+         + (['--force'] if __lh_pam_profile == '' else []) }}
   changed_when: true
 
-- name: Check that the authselect-generated files are consistent
+- name: stack_authselect | Check that the authselect-generated files are consistent
   ansible.builtin.command: authselect check
   changed_when: false

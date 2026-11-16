@@ -1,12 +1,12 @@
 ---
 # Read-only. Sets __lh_pam_stack_ok (does the PAM stack call pam_faillock?) and, on EL, the current authselect profile.
-- name: Look for authselect
+- name: facts | Look for authselect
   ansible.builtin.stat:
     path: /usr/bin/authselect
   register: __lh_pam_authselect_bin
   when: ansible_facts['os_family'] == 'RedHat'
 
-- name: Read the current authselect profile
+- name: facts | Read the current authselect profile
   ansible.builtin.command: authselect current --raw
   register: __lh_pam_authselect_current
   changed_when: false
@@ -17,18 +17,22 @@
     - __lh_pam_authselect_bin.stat.exists
 
 # rc 0 only when a profile is selected; otherwise stdout is a human sentence ("No existing configuration detected.").
-- name: Work out the authselect profile and features
+- name: facts | Work out the authselect profile and features
   ansible.builtin.set_fact:
-    __lh_pam_profile: "{{ (__lh_pam_authselect_current.stdout.split() | first) if (__lh_pam_authselect_current.rc | default(1)) == 0 else '' }}"
-    __lh_pam_features: "{{ __lh_pam_authselect_current.stdout.split()[1:] if (__lh_pam_authselect_current.rc | default(1)) == 0 else [] }}"
+    __lh_pam_profile: "{{ __lh_pam_current[0] if __lh_pam_selected else '' }}"
+    __lh_pam_features: "{{ __lh_pam_current[1:] if __lh_pam_selected else [] }}"
+  vars:
+    # authselect is absent or has no profile: the registered result is skipped or rc != 0
+    __lh_pam_selected: "{{ (__lh_pam_authselect_current.rc | default(1)) == 0 }}"
+    __lh_pam_current: "{{ (__lh_pam_authselect_current.stdout | default('')).split() }}"
   when: ansible_facts['os_family'] == 'RedHat'
 
-- name: Check the EL stack
+- name: facts | Check the EL stack
   ansible.builtin.set_fact:
     __lh_pam_stack_ok: "{{ 'with-faillock' in __lh_pam_features }}"
   when: ansible_facts['os_family'] == 'RedHat'
 
-- name: Read the Debian common-auth
+- name: facts | Read the Debian common-auth
   ansible.builtin.slurp:
     src: /etc/pam.d/common-auth
   register: __lh_pam_common_auth
@@ -36,7 +40,7 @@
   check_mode: false
   when: ansible_facts['os_family'] == 'Debian'
 
-- name: Check the Debian stack
+- name: facts | Check the Debian stack
   ansible.builtin.set_fact:
     __lh_pam_stack_ok: "{{ 'pam_faillock.so' in (__lh_pam_common_auth.content | default('') | b64decode) }}"
   when: ansible_facts['os_family'] == 'Debian'

@@ -17,4 +17,4 @@ argument_specs:
       linux_hardening_pam_faillock_root_unlock_time: {type: int, default: 900, description: "Seconds root stays locked (when even_deny_root)."}
       linux_hardening_pam_allow_permanent_lock: {type: bool, default: false, description: "Allow unlock_time 0."}
       linux_hardening_pam_faillock_extra: {type: dict, default: {}, description: "Extra faillock.conf settings; true writes a bare flag."}
-      linux_hardening_pam_authselect_profile: {type: str, description: "EL/Fedora: profile to select when none is selected (minimal, sssd, winbind)."}
+      linux_hardening_pam_authselect_profile: {type: str, choices: [minimal, sssd, winbind], description: "EL/Fedora: profile to select when none is selected (minimal, sssd, winbind)."}
