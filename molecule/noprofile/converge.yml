@@ -1,12 +1,22 @@
 ---
 # EL only: with no authselect profile selected the role must refuse to replace hand-managed PAM files.
+# Images that already ship with a profile (Fedora, EL10) have nothing to refuse, so they skip the check.
 - name: Converge (no profile named)
   hosts: all
   become: false
   gather_facts: true
   tasks:
-    - name: Try to remediate without a profile
+    - name: Look for a selected authselect profile
+      ansible.builtin.command: authselect current --raw
+      register: __profile
+      changed_when: false
+      failed_when: false
       when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Try to remediate without a profile
+      when:
+        - ansible_facts['os_family'] == 'RedHat'
+        - __profile.rc != 0
       block:
         - name: Remediate
           ansible.builtin.include_role:
