@@ -2,9 +2,16 @@
 
 # Ansible Role: Pam Hardening
 
-> Standalone copy of `pam_hardening` from the [iamenr0s.linux_hardening](https://github.com/iamenr0s/linux-hardening-collection) collection. Variables keep the collection-wide `linux_hardening_*` prefix.
+This role audits and applies PAM account lockout (`pam_faillock`) on Debian/Ubuntu, RHEL/AlmaLinux/RockyLinux and Fedora servers. It writes `/etc/security/faillock.conf` and enables `pam_faillock` in the PAM stack through `authselect` (EL, Fedora) or `pam-auth-update` (Debian, Ubuntu).
 
-Sole owner of PAM stack changes in this collection. Today it does one thing: **account lockout with `pam_faillock`** (lock an account for `unlock_time` seconds after `deny` failed logins). Password quality and `login.defs` belong to a later `password_policy` role.
+Features
+--------
+- Audit mode by default: read-only, and reports every deviation. Changes need `linux_hardening_confirm_remediation: true`.
+- Refuses to replace hand-managed PAM files on EL when no authselect profile is selected, unless you name one.
+- Refuses settings that lock accounts out for good (`unlock_time: 0`) without explicit consent.
+- Backs up the PAM files and `faillock.conf` before changing them, with rollback steps below.
+- Root is not locked by default, so an attacker cannot keep root out of its own console.
+- The only role in the `iamenr0s.linux_hardening` collection that changes `/etc/pam.d`. Password quality and `login.defs` belong to a later `password_policy` role.
 
 ## What it does
 | Part | EL / Fedora | Debian / Ubuntu |
@@ -19,6 +26,9 @@ Root is **not** locked by default (`even_deny_root: false`): an attacker could o
 - **EL with no authselect profile selected** (hand-managed PAM files, as on a stock cloud image): the role refuses to replace them. Name a profile in `linux_hardening_pam_authselect_profile` (`minimal`, `sssd`, `winbind`) to let it select one. Roll back with `authselect backup-restore <name>` (`authselect backup-list`).
 - A lockout can still hit a legitimate user who mistypes, and an attacker can lock a known account for `unlock_time`. Admins unlock with `faillock --user NAME --reset`.
 - Keep a root console or a second session open when you first apply it to a remote host.
+
+## Variable names
+Variables use the collection-wide `linux_hardening_*` prefix (shared with sibling roles) rather than `pam_hardening_*`. This role is a standalone copy of `pam_hardening` from the [iamenr0s.linux_hardening](https://github.com/iamenr0s/linux-hardening-collection) collection.
 
 ## Modes
 `audit` (default) is read-only and sets `linux_hardening_pam_findings` (`key, expected, actual, fixable`). `remediate` re-audits afterwards.
