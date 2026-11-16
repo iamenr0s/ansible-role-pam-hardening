@@ -14,6 +14,15 @@
         fail_msg: "linux_hardening_mode must be 'audit' or 'remediate', got '{{ linux_hardening_mode }}'"
         quiet: true
 
+    # Not an argument_specs choice: the default is null, which choices would reject.
+    - name: Validate linux_hardening_pam_authselect_profile
+      ansible.builtin.assert:
+        that: linux_hardening_pam_authselect_profile in [none, 'minimal', 'sssd', 'winbind']
+        fail_msg: >-
+          linux_hardening_pam_authselect_profile must be minimal, sssd or winbind,
+          got '{{ linux_hardening_pam_authselect_profile }}'
+        quiet: true
+
     - name: Stop on unsupported OS families
       ansible.builtin.assert:
         that: ansible_facts['os_family'] in ['RedHat', 'Debian']
@@ -21,8 +30,17 @@
         quiet: true
 
     - name: Audit (read-only)
-      ansible.builtin.include_tasks: audit.yml
       when: linux_hardening_mode == 'audit'
+      block:
+        - name: Report the PAM state
+          ansible.builtin.include_tasks: audit.yml
+
+        - name: Fail on findings
+          ansible.builtin.assert:
+            that: linux_hardening_pam_findings | length == 0
+            fail_msg: "pam_hardening found {{ linux_hardening_pam_findings | length }} deviation(s)."
+            quiet: true
+          when: linux_hardening_fail_on_error | bool
 
     - name: Remediate
       when: linux_hardening_mode == 'remediate'
@@ -51,7 +69,14 @@
           ansible.builtin.include_tasks: configure.yml
 
         - name: Verify effective configuration
-          ansible.builtin.include_tasks: audit.yml
-          vars:
-            __lh_pam_audit_fatal: true
           when: linux_hardening_verify | bool
+          block:
+            - name: Re-audit the PAM state
+              ansible.builtin.include_tasks: audit.yml
+
+            # Findings the role cannot fix (e.g. no authselect profile named) are reported, not fatal.
+            - name: Fail if anything fixable remains
+              ansible.builtin.assert:
+                that: linux_hardening_pam_findings | selectattr('fixable') | list | length == 0
+                fail_msg: "pam_hardening left deviations it should have fixed: {{ linux_hardening_pam_findings }}"
+                quiet: true

@@ -16,12 +16,13 @@
 - name: stack_authselect | Select the profile with faillock enabled (the current PAM files are backed up first)
   vars:
     __lh_pam_use_profile: "{{ __lh_pam_profile if __lh_pam_profile != '' else linux_hardening_pam_authselect_profile }}"
+    __lh_pam_select_features: "{{ (__lh_pam_features + ['with-faillock']) | unique | list }}"
+    __lh_pam_select_backup: "--backup={{ __linux_hardening_pam_backup_name }}-{{ ansible_facts['date_time']['epoch'] }}"
+    __lh_pam_select_force: "{{ ['--force'] if __lh_pam_profile == '' else [] }}"
   ansible.builtin.command:
     argv: >-
       {{ ['authselect', 'select', __lh_pam_use_profile]
-         + ((__lh_pam_features + ['with-faillock']) | unique | list)
-         + ['--backup=' ~ __linux_hardening_pam_backup_name ~ '-' ~ ansible_facts['date_time']['epoch']]
-         + (['--force'] if __lh_pam_profile == '' else []) }}
+         + __lh_pam_select_features + [__lh_pam_select_backup] + __lh_pam_select_force }}
   changed_when: true
 
 - name: stack_authselect | Check that the authselect-generated files are consistent

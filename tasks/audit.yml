@@ -47,17 +47,3 @@
 - name: audit | Report pam_hardening result
   ansible.builtin.debug:
     msg: "{{ 'COMPLIANT' if linux_hardening_pam_findings | length == 0 else linux_hardening_pam_findings }}"
-
-# Before remediation (and when fail_on_error is set) every finding fails the run.
-# After remediation only findings the role could have fixed do.
-- name: audit | Fail on findings
-  ansible.builtin.fail:
-    msg: "pam_hardening found {{ __lh_pam_blocking | length }} deviation(s)."
-  vars:
-    __lh_pam_blocking: >-
-      {{ linux_hardening_pam_findings | selectattr('fixable') | list
-         if __lh_pam_audit_fatal | default(false)
-         else linux_hardening_pam_findings }}
-  when:
-    - (__lh_pam_audit_fatal | default(false)) or (linux_hardening_fail_on_error | bool)
-    - __lh_pam_blocking | length > 0

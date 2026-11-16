@@ -62,5 +62,4 @@ argument_specs:
         description: "Extra faillock.conf settings; true writes a bare flag."
       linux_hardening_pam_authselect_profile:
         type: str
-        choices: [minimal, sssd, winbind]
         description: "EL/Fedora: profile to select when none is selected (minimal, sssd, winbind)."
