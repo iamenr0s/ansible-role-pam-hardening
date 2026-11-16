@@ -99,4 +99,4 @@ This project is licensed under the [MIT License](LICENSE).
 
 Author: iamenr0s
 
-Galaxy: `iamenr0s.ansible_role_pam_hardening`
+Galaxy: `iamenr0s.pam_hardening`
