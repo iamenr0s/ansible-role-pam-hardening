@@ -1,4 +1,4 @@
-[![Molecule](https://github.com/iamenr0s/ansible-role-pam-hardening/actions/workflows/molecule.yml/badge.svg)](https://github.com/iamenr0s/ansible-role-pam-hardening/actions/workflows/molecule.yml) ![Ansible Role](https://img.shields.io/ansible/role/d/iamenr0s/ansible_role_pam_hardening) [![CodeFactor](https://www.codefactor.io/repository/github/iamenr0s/ansible-role-pam-hardening/badge)](https://www.codefactor.io/repository/github/iamenr0s/ansible-role-pam-hardening)
+[![Molecule](https://github.com/iamenr0s/ansible-role-pam-hardening/actions/workflows/molecule.yml/badge.svg)](https://github.com/iamenr0s/ansible-role-pam-hardening/actions/workflows/molecule.yml) ![Ansible Role](https://img.shields.io/ansible/role/d/iamenr0s/pam_hardening) [![CodeFactor](https://www.codefactor.io/repository/github/iamenr0s/ansible-role-pam-hardening/badge)](https://www.codefactor.io/repository/github/iamenr0s/ansible-role-pam-hardening)
 
 # Ansible Role: Pam Hardening
 
