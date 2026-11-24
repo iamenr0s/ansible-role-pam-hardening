@@ -33,11 +33,36 @@ Variables use the collection-wide `linux_hardening_*` prefix (shared with siblin
 ## Modes
 `audit` (default) is read-only and sets `linux_hardening_pam_findings` (`key, expected, actual, fixable`). `remediate` re-audits afterwards.
 
+## Role Variables
+
+| Variable | Type | Default | Description |
+|---|---|---|---|
+| `linux_hardening_mode` | str | `audit` | audit is read-only. Choices: `audit`, `remediate`. |
+| `linux_hardening_confirm_remediation` | bool | `false` | Must be true before remediate changes anything. |
+| `linux_hardening_backup` | bool | `true` | Back up faillock.conf when it changes. |
+| `linux_hardening_verify` | bool | `true` | Re-audit after remediation. |
+| `linux_hardening_fail_on_error` | bool | `true` | Fail the play when audit finds deviations. |
+| `linux_hardening_pam_enabled` | bool | `true` | Run the role. |
+| `linux_hardening_pam_faillock_conf` | path | `/etc/security/faillock.conf` | faillock configuration file. |
+| `linux_hardening_pam_faillock_deny` | int | `5` | Failed logins before the account locks. |
+| `linux_hardening_pam_faillock_fail_interval` | int | `900` | Seconds in which the failures are counted. |
+| `linux_hardening_pam_faillock_unlock_time` | int | `900` | Seconds a lock lasts; 0 is permanent. |
+| `linux_hardening_pam_faillock_even_deny_root` | bool | `false` | Also lock root. |
+| `linux_hardening_pam_faillock_root_unlock_time` | int | `900` | Seconds root stays locked (when even_deny_root). |
+| `linux_hardening_pam_allow_permanent_lock` | bool | `false` | Allow unlock_time 0. |
+| `linux_hardening_pam_faillock_extra` | dict | `{}` | Extra faillock.conf settings; true writes a bare flag. |
+| `linux_hardening_pam_authselect_profile` | str | `null` | EL/Fedora: profile to select when none is selected (minimal, sssd, winbind). |
+
+**Idempotent:** yes. A second `remediate` run reports no changes (the Molecule `idempotence` step checks this).
+
+**Check mode:** `remediate` with `--check --diff` shows what would change without writing anything; the post-remediation re-audit is skipped in check mode.
+
 ## Example
 ```yaml
 - hosts: all
+  become: true
   roles:
-    - role: iamenr0s.linux_hardening.pam_hardening
+    - role: iamenr0s.pam_hardening
       vars:
         linux_hardening_mode: remediate
         linux_hardening_confirm_remediation: true
