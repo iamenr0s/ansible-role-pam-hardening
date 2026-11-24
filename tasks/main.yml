@@ -8,12 +8,6 @@
         gather_subset: [min, date_time]
       when: ansible_facts['date_time'] is not defined or ansible_facts['os_family'] is not defined
 
-    - name: Validate linux_hardening_mode
-      ansible.builtin.assert:
-        that: linux_hardening_mode in ['audit', 'remediate']
-        fail_msg: "linux_hardening_mode must be 'audit' or 'remediate', got '{{ linux_hardening_mode }}'"
-        quiet: true
-
     # Not an argument_specs choice: the default is null, which choices would reject.
     - name: Validate linux_hardening_pam_authselect_profile
       ansible.builtin.assert:
@@ -69,7 +63,8 @@
           ansible.builtin.include_tasks: configure.yml
 
         - name: Verify effective configuration
-          when: linux_hardening_verify | bool
+          # In check mode nothing was written, so a re-audit would always fail.
+          when: linux_hardening_verify | bool and not ansible_check_mode
           block:
             - name: Re-audit the PAM state
               ansible.builtin.include_tasks: audit.yml
